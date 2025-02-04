@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1076035976740",
+    "project_id": "sarva-krishi",
+    "storage_bucket": "sarva-krishi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1076035976740:android:8c1d9e99d7502214e6a2b1",
+        "android_client_info": {
+          "package_name": "com.reinvent.sarva"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjvsoOYRfvkyOOa1LQl2X-cO1_QyGO7D0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

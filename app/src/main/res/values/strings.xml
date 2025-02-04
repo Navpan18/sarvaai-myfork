@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">Sarva Krishi</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_profile">Profile</string>
+    <string name="ID_PROCEED_TEXT">Proceed</string>
+    <string name="ID_CLICK_PHOTO">Click Photo</string>
+    <string name="IDS_RETAKE">Retake</string>
+    <string name="HELLO_FARMER">Hello, Farmer</string>
+    <string name="SAMPLE_DATE">Sunday, 01 Jan 2025</string>
+    <string name="COMMODITY_AND_FOOD">Commodities and Food</string>
+    <string name="IDS_RICE">Rice</string>
+    <string name="MANAGE_YOUR_FIELD">Manage Your Field</string>
+    <string name="IDS_MY_CROPS">My Crops</string>
+    <string name="IDS_MY_CROP_DOCTOR">My Crop Doctor</string>
+    <string name="IDS_ONLINE_PREDICTION">Online Prediction</string>
+    <string name="IDS_API_CALLING">Welcome to API Calling</string>
+    <string name="IDS_TAKE_PHOTO">Take Photo</string>
+    <string name="IDS_CHOOSE_GALLERY">Choose from Gallery</string>
+    <string name="IDS_UPLOAD_PREDICT">Upload and Predict</string>
+    <string name="IDS_API_RESPONSE">API Response will appear here</string>
+    <string name="IDS_OFFLINE_PREDICTION">Offline Prediction</string>
+    <string name="IDS_PREDICT">Predict</string>
+    <string name="IDS_PREDICTION_RESULT">Prediction Result:</string>
+    <string name="PLANTIMG">plant_image_description</string>
+</resources>
