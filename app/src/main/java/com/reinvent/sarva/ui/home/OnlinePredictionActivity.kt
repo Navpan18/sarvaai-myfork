@@ -7,14 +7,13 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import com.canhub.cropper.CropImageContract
-import com.canhub.cropper.CropImageContractOptions
-import com.canhub.cropper.CropImageOptions
-import com.canhub.cropper.CropImageView
-import com.google.gson.Gson
+import com.reinvent.sarva.R
 import com.reinvent.sarva.databinding.ActivityOnlinePredictionBinding
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -26,67 +25,19 @@ import java.io.IOException
 class OnlinePredictionActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityOnlinePredictionBinding
+    private lateinit var imagePreview: ImageView
+    private lateinit var uploadButton: Button
+    private lateinit var apiResponseText: TextView
     private var selectedImageUri: Uri? = null
-
-    private val classLabels = mapOf(
-
-        0 to "Apple___Apple_scab",
-        1 to "Apple___Black_rot",
-        2 to "Apple___Cedar_apple_rust",
-        3 to "Apple___healthy",
-        4 to "Background_without_leaves",
-        5 to "Blueberry___healthy",
-        6 to "Cherry_Powdery___mildew",
-        7 to "Cherry___healthy",
-        8 to "Corn___Cercospora_leaf_spot_Gray_leaf_spot",
-        9 to "Corn___Common_rust",
-        10 to "Corn___Northern_Leaf_Blight",
-        11 to "Corn___healthy",
-        12 to "Grape___Black_rot",
-        13 to "Grape___Esca(Black_Measles)",
-        14 to "Grape___Leaf_blight(Isariopsis_Leaf_Spot)",
-        15 to "Grape___healthy",
-        16 to "Orange___Haunglongbing(Citrus_greening)",
-        17 to "Peach___Bacterial_spot",
-        18 to "Peach___healthy",
-        19 to "Pepper,bell___Bacterial_spot",
-        20 to "Pepper,___bell_healthy",
-        21 to "Potato___Early_blight",
-        22 to "Potato___Late_blight",
-        23 to "Potato___healthy",
-        24 to "Raspberry___healthy",
-        25 to "Soybean___healthy",
-        26 to "Squash___Powdery_mildew",
-        27 to "Strawberry___Leaf_scorch",
-        28 to "Strawberry___healthy",
-        29 to "Tomato___Bacterial_spot",
-        30 to "Tomato___Early_blight",
-        31 to "Tomato___Late_blight",
-        32 to "Tomato___Leaf_Mold",
-        33 to "Tomato___Septoria_leaf_spot",
-        34 to "Tomato___Spider_mites_Two-spotted_spider_mite",
-        35 to "Tomato___Target_Spot",
-        36 to "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
-        37 to "Tomato___Tomato_mosaic_virus",
-        38 to "Tomato___healthy"
-    )
-
-    private val cropActivityResultLauncher = registerForActivityResult(CropImageContract()) { result ->
-        if (result.isSuccessful) {
-            result.uriContent?.let { uri ->
-                selectedImageUri = uri
-                binding.imagePreview.setImageURI(uri)
-                binding.uploadButton.isEnabled = true
-            } ?: showToast("Error loading cropped image.")
-        } else {
-            showToast("Image cropping failed.")
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityOnlinePredictionBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        imagePreview = binding.imagePreview
+        uploadButton = binding.uploadButton
+        apiResponseText = binding.apiResponseText
 
         binding.cameraButton.setOnClickListener { openCamera() }
         binding.galleryButton.setOnClickListener { openGallery() }
@@ -95,61 +46,79 @@ class OnlinePredictionActivity : AppCompatActivity() {
 
     private fun openCamera() {
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-        cameraLauncher.launch(intent)
+        startActivityForResult(intent, CAMERA_REQUEST)
     }
 
     private fun openGallery() {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        galleryLauncher.launch(intent)
+        startActivityForResult(intent, GALLERY_REQUEST)
+    }
+    private fun saveBitmapToFile(bitmap: Bitmap): Uri {
+        val file = File(cacheDir, "captured_image.jpg")
+        file.createNewFile()
+
+        val bos = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos)
+        val bitmapData = bos.toByteArray()
+
+        file.outputStream().use {
+            it.write(bitmapData)
+            it.flush()
+        }
+
+        return Uri.fromFile(file)
     }
 
-    private val cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val bitmap = result.data?.extras?.get("data") as? Bitmap
-            bitmap?.let { startCrop(getImageUri(it)) }
-                ?: showToast("Camera capture failed.")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == Activity.RESULT_OK) {
+            when (requestCode) {
+                CAMERA_REQUEST -> {
+                    val bitmap = data?.extras?.get("data") as Bitmap
+                    selectedImageUri = saveBitmapToFile(bitmap)
+                    imagePreview.setImageURI(selectedImageUri)
+                }
+                GALLERY_REQUEST -> {
+                    selectedImageUri = data?.data
+                    imagePreview.setImageURI(selectedImageUri)
+                }
+            }
+            uploadButton.isEnabled = selectedImageUri != null
         }
     }
 
-    private val galleryLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.data?.let { startCrop(it) }
-                ?: showToast("Failed to load image from gallery.")
-        }
-    }
 
-    private fun startCrop(imageUri: Uri) {
-        cropActivityResultLauncher.launch(
-            CropImageContractOptions(
-                uri = imageUri,
-                cropImageOptions = CropImageOptions(
-                    guidelines = CropImageView.Guidelines.ON,
-                    aspectRatioX = 1,
-                    aspectRatioY = 1
-                )
-            )
-        )
-    }
-
-    private fun getImageUri(bitmap: Bitmap): Uri {
+    private fun getImageUriFromBitmap(bitmap: Bitmap): Uri {
         val bytes = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes)
         val path = MediaStore.Images.Media.insertImage(contentResolver, bitmap, "CapturedImage", null)
-        return Uri.parse(path ?: "")
+        return Uri.parse(path)
+    }
+    private fun getFileFromUri(uri: Uri): File? {
+        try {
+            val inputStream = contentResolver.openInputStream(uri) ?: return null
+            val file = File(cacheDir, "uploaded_image.jpg")
+            file.outputStream().use { outputStream ->
+                inputStream.copyTo(outputStream)
+            }
+            return file
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return null
+        }
     }
 
+
     private fun uploadImageToApi() {
-        val uri = selectedImageUri
-        if (uri == null) {
-            showToast("No image selected.")
+        if (selectedImageUri == null) {
+            Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val file = File(cacheDir, "uploaded_image.jpg").apply {
-            outputStream().use { outputStream ->
-                contentResolver.openInputStream(uri)?.copyTo(outputStream)
-                    ?: run { showToast("Failed to process image."); return }
-            }
+        val file = getFileFromUri(selectedImageUri!!)
+        if (file == null || !file.exists()) {
+            Toast.makeText(this, "Failed to process image!", Toast.LENGTH_SHORT).show()
+            return
         }
 
         val requestBody = MultipartBody.Builder()
@@ -162,96 +131,31 @@ class OnlinePredictionActivity : AppCompatActivity() {
             .post(requestBody)
             .build()
 
-        OkHttpClient().newCall(request).enqueue(object : Callback {
+        val client = OkHttpClient()
+        client.newCall(request).enqueue(object : Callback {
             @SuppressLint("SetTextI18n")
             override fun onFailure(call: Call, e: IOException) {
                 runOnUiThread {
-                    binding.apiResponseText.text = "API call failed: ${e.message ?: "Unknown error"}"
+                    apiResponseText.text = "API call failed: ${e.message}"
+                    apiResponseText.visibility = TextView.VISIBLE
                 }
             }
 
             override fun onResponse(call: Call, response: Response) {
-                response.body?.string()?.let { handlePredictionResponse(it) }
-                    ?: runOnUiThread { showToast("Empty API response.") }
-            }
-        })
-    }
-
-    private fun handlePredictionResponse(response: String) {
-        val predictedClass = classLabels.entries.find { response.contains(it.value) }?.value ?: "Unknown Class"
-
-        if (predictedClass == "Background_without_leaves") {
-            runOnUiThread {
-                binding.apiResponseText.text = "No plant disease detected."
-            }
-            return
-        }
-
-        val apiUrl = "https://navpan2-sarva-ai-back.hf.space/kotlinback/$predictedClass"
-        fetchDiseaseDetails(apiUrl)
-    }
-
-    private fun fetchDiseaseDetails(apiUrl: String) {
-        val request = Request.Builder().url(apiUrl).build()
-
-        OkHttpClient().newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
+                val responseText = response.body?.string() ?: "No response"
                 runOnUiThread {
-                    binding.apiResponseText.text = "Failed to fetch details: ${e.message ?: "Unknown error"}"
+                    apiResponseText.text = responseText
+                    apiResponseText.visibility = TextView.VISIBLE
                 }
-            }
-
-            override fun onResponse(call: Call, response: Response) {
-                response.body?.string()?.let {
-                    val diseaseDetails = Gson().fromJson(it, DiseaseDetails::class.java)
-                    runOnUiThread { displayDiseaseDetails(diseaseDetails) }
-                } ?: runOnUiThread { showToast("Invalid response from server.") }
             }
         })
     }
 
-    private fun displayDiseaseDetails(details: DiseaseDetails?) {
-        if (details == null) {
-            showToast("No disease details available.")
-            return
-        }
 
-        val result = """
-            🌿 Plant Name: ${details.plantName ?: "N/A"}
-            🔍 Disease: ${details.diseaseDesc?.diseaseName ?: "Unknown"}
-            🧬 Botanical Name: ${details.botanicalName ?: "N/A"}
-            ❗ Symptoms: ${details.diseaseDesc?.symptoms ?: "Not provided"}
-            💡 Remedies:
-            ${details.diseaseRemedyList?.joinToString("\n") { "- ${it.diseaseRemedy ?: "No remedy provided"}" } ?: "No remedies found."}
-        """.trimIndent()
-
-        binding.apiResponseText.text = result
-    }
-
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-    }
 
     companion object {
-        private const val API_ENDPOINT = "https://navpan2-sarva-api.hf.space/predict"
+        private const val CAMERA_REQUEST = 1001
+        private const val GALLERY_REQUEST = 1002
+        private const val API_ENDPOINT = "https://navpan2-sarvaapiplantvillage.hf.space/predict"
     }
 }
-
-data class DiseaseDetails(
-    val plantName: String?,
-    val botanicalName: String?,
-    val diseaseDesc: DiseaseDesc?,
-    val diseaseRemedyList: List<DiseaseRemedy>?
-)
-
-data class DiseaseDesc(
-    val diseaseName: String?,
-    val symptoms: String?,
-    val diseaseCauses: String?
-)
-
-data class DiseaseRemedy(
-    val title: String?,
-    val diseaseRemedyShortDesc: String?,
-    val diseaseRemedy: String?
-)
