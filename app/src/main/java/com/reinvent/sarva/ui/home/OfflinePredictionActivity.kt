@@ -25,7 +25,9 @@ import java.io.FileInputStream
 import java.io.IOException
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
-
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 class OfflinePredictionActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityOfflinePredictionBinding
@@ -103,8 +105,29 @@ class OfflinePredictionActivity : AppCompatActivity() {
         val diseaseRemedyShortDesc: String,
         val diseaseRemedy: String
     )
+    private fun showStaticDiseaseInfo(className: String) {
+        val diseaseInfo = staticDiseaseData[className]
+        runOnUiThread {
+            if (diseaseInfo != null) {
+                displayDiseaseDetails(diseaseInfo)
+            } else {
+                binding.predictionResult.text = "No offline data available for: $className"
+                binding.predictionResult.visibility = TextView.VISIBLE
+            }
+        }
+    }
+    private fun isInternetAvailable(): Boolean {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val networkCapabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
 
     private fun fetchDiseaseDetails(className: String) {
+        if (!isInternetAvailable()) {
+            showStaticDiseaseInfo(className)
+            return
+        }
         val apiUrl = "https://navpan2-sarva-ai-back.hf.space/kotlinback/$className"
         val client = OkHttpClient()
 
@@ -129,6 +152,131 @@ class OfflinePredictionActivity : AppCompatActivity() {
             }
         })
     }
+    private val staticDiseaseData = mapOf(
+        "Apple___Apple_scab" to DiseaseInfo(
+            key = "apple_scab",
+            plantName = "Apple",
+            botanicalName = "Malus domestica",
+            diseaseDesc = DiseaseDesc(
+                diseaseName = "Apple Scab",
+                symptoms = "Dark, scaly lesions on leaves and fruit.",
+                diseaseCauses = "Caused by fungus *Venturia inaequalis* in humid conditions."
+            ),
+            diseaseRemedyList = listOf(
+                DiseaseRemedy(
+                    title = "Fungicide Treatment",
+                    diseaseRemedyShortDesc = "Use Mancozeb",
+                    diseaseRemedy = "Apply Mancozeb-based fungicides before symptoms appear."
+                ),
+                DiseaseRemedy(
+                    title = "Cultural Control",
+                    diseaseRemedyShortDesc = "Prune Infected Parts",
+                    diseaseRemedy = "Remove infected leaves and fruit to prevent spread."
+                )
+            )
+        ),
+        "Apple___Black_rot" to DiseaseInfo(
+            key = "apple_black_rot",
+            plantName = "Apple",
+            botanicalName = "Malus domestica",
+            diseaseDesc = DiseaseDesc(
+                diseaseName = "Black Rot",
+                symptoms = "Dark, sunken lesions on fruit and leaves.",
+                diseaseCauses = "Caused by *Botryosphaeria obtusa* fungus."
+            ),
+            diseaseRemedyList = listOf(
+                DiseaseRemedy(
+                    title = "Chemical Control",
+                    diseaseRemedyShortDesc = "Use Captan Fungicide",
+                    diseaseRemedy = "Apply Captan or Thiophanate-methyl for control."
+                ),
+                DiseaseRemedy(
+                    title = "Cultural Practices",
+                    diseaseRemedyShortDesc = "Sanitize Orchard",
+                    diseaseRemedy = "Remove infected fruit and prune diseased branches."
+                )
+            )
+        ),
+        "Apple___Cedar_apple_rust" to DiseaseInfo(
+            key = "apple_cedar_apple_rust",
+            plantName = "Apple",
+            botanicalName = "Malus domestica",
+            diseaseDesc = DiseaseDesc(
+                diseaseName = "Cedar Apple Rust",
+                symptoms = "Orange spots on leaves with tube-like fungal growths.",
+                diseaseCauses = "Caused by fungus *Gymnosporangium juniperi-virginianae*."
+            ),
+            diseaseRemedyList = listOf(
+                DiseaseRemedy(
+                    title = "Fungicide Treatment",
+                    diseaseRemedyShortDesc = "Use Myclobutanil",
+                    diseaseRemedy = "Spray Myclobutanil-based fungicides during spring."
+                ),
+                DiseaseRemedy(
+                    title = "Resistant Varieties",
+                    diseaseRemedyShortDesc = "Grow Rust-Resistant Apples",
+                    diseaseRemedy = "Choose resistant apple varieties like 'Enterprise' or 'Liberty'."
+                )
+            )
+        ),
+        "Apple___healthy" to DiseaseInfo(
+            key = "apple_healthy",
+            plantName = "Apple",
+            botanicalName = "Malus domestica",
+            diseaseDesc = DiseaseDesc(
+                diseaseName = "Healthy",
+                symptoms = "No disease symptoms observed.",
+                diseaseCauses = "N/A"
+            ),
+            diseaseRemedyList = listOf(
+                DiseaseRemedy(
+                    title = "Preventive Care",
+                    diseaseRemedyShortDesc = "Maintain Orchard Health",
+                    diseaseRemedy = "Use proper spacing, irrigation, and pruning to keep trees healthy."
+                )
+            )
+        ),
+        "Corn___Cercospora_leaf_spot_Gray_leaf_spot" to DiseaseInfo(
+            key = "corn_gray_leaf_spot",
+            plantName = "Corn",
+            botanicalName = "Zea mays",
+            diseaseDesc = DiseaseDesc(
+                diseaseName = "Gray Leaf Spot",
+                symptoms = "Grayish lesions on leaves that expand over time.",
+                diseaseCauses = "Caused by *Cercospora zeae-maydis* fungus."
+            ),
+            diseaseRemedyList = listOf(
+                DiseaseRemedy(
+                    title = "Fungicide Treatment",
+                    diseaseRemedyShortDesc = "Use Azoxystrobin",
+                    diseaseRemedy = "Spray Azoxystrobin-based fungicides at early stages."
+                ),
+                DiseaseRemedy(
+                    title = "Crop Rotation",
+                    diseaseRemedyShortDesc = "Rotate Crops",
+                    diseaseRemedy = "Avoid continuous corn planting to prevent disease buildup."
+                )
+            )
+        ),
+        // 🔥 ADD ALL 39 DISEASES IN SIMILAR FORMAT 🔥
+        "Tomato___healthy" to DiseaseInfo(
+            key = "tomato_healthy",
+            plantName = "Tomato",
+            botanicalName = "Solanum lycopersicum",
+            diseaseDesc = DiseaseDesc(
+                diseaseName = "Healthy",
+                symptoms = "No disease symptoms observed.",
+                diseaseCauses = "N/A"
+            ),
+            diseaseRemedyList = listOf(
+                DiseaseRemedy(
+                    title = "Preventive Care",
+                    diseaseRemedyShortDesc = "Maintain Proper Growth Conditions",
+                    diseaseRemedy = "Ensure proper sunlight, watering, and nutrient supply."
+                )
+            )
+        )
+    )
 
     private fun openGallery() {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)

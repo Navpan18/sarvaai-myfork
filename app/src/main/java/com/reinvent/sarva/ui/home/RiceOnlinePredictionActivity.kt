@@ -8,46 +8,22 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
-import android.view.View
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.google.gson.Gson
-import com.google.gson.JsonObject
 import com.reinvent.sarva.R
 import com.reinvent.sarva.databinding.ActivityOnlinePredictionBinding
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
+import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
-import com.google.gson.annotations.SerializedName
-import org.json.JSONObject
 
-data class DiseaseInfo(
-    @SerializedName("key") val key: String,
-    @SerializedName("plantName") val plantName: String,
-    @SerializedName("botanicalName") val botanicalName: String,
-    @SerializedName("diseaseDesc") val diseaseDesc: DiseaseDesc,
-    @SerializedName("diseaseRemedyList") val diseaseRemedyList: List<DiseaseRemedy>
-)
-
-data class DiseaseDesc(
-    @SerializedName("diseaseName") val diseaseName: String,
-    @SerializedName("symptoms") val symptoms: String,
-    @SerializedName("diseaseCauses") val diseaseCauses: String
-)
-
-data class DiseaseRemedy(
-    @SerializedName("title") val title: String,
-    @SerializedName("diseaseRemedyShortDesc") val diseaseRemedyShortDesc: String,
-    @SerializedName("diseaseRemedy") val diseaseRemedy: String
-)
-
-class OnlinePredictionActivity : AppCompatActivity() {
+class RiceOnlinePredictionActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityOnlinePredictionBinding
     private lateinit var imagePreview: ImageView
@@ -145,10 +121,6 @@ class OnlinePredictionActivity : AppCompatActivity() {
             Toast.makeText(this, "Failed to process image!", Toast.LENGTH_SHORT).show()
             return
         }
-
-
-
-
         fun displayDiseaseDetails(info: DiseaseInfo) {
             val result = """
         🌱 **Plant Name:** ${info.plantName}
@@ -165,10 +137,8 @@ class OnlinePredictionActivity : AppCompatActivity() {
     """.trimIndent()
 
             binding.predictionResult.text = result
-            binding.predictionResult.visibility = View.VISIBLE  // Make sure it is visible
+            binding.predictionResult.visibility = TextView.VISIBLE
         }
-
-
 
         val requestBody = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -179,6 +149,73 @@ class OnlinePredictionActivity : AppCompatActivity() {
             .url(API_ENDPOINT)
             .post(requestBody)
             .build()
+        fun getStaticDiseaseInfo(prediction: String): DiseaseInfo {
+            return when (prediction.lowercase()) {
+                "blight" -> DiseaseInfo(
+                    key = "Blight",
+                    plantName = "Rice",
+                    botanicalName = "TBD",
+                    diseaseDesc = DiseaseDesc(
+                        diseaseName = "Blight",
+                        symptoms = "Yellowing and wilting of leaves.",
+                        diseaseCauses = "Caused by a bacterial infection."
+                    ),
+                    diseaseRemedyList = listOf(
+                        DiseaseRemedy(
+                            title = "Use Resistant Varieties",
+                            diseaseRemedyShortDesc = "Choose blight-resistant rice strains.",
+                            diseaseRemedy = "Consult local agricultural services for the best variety."
+                        ),
+                        DiseaseRemedy(
+                            title = "Proper Water Management",
+                            diseaseRemedyShortDesc = "Avoid excessive irrigation.",
+                            diseaseRemedy = "Ensure proper drainage to prevent disease spread."
+                        )
+                    )
+                )
+
+                "brown_spots" -> DiseaseInfo(
+                    key = "Brown Spots",
+                    plantName = "Rice",
+                    botanicalName = "TBD",
+                    diseaseDesc = DiseaseDesc(
+                        diseaseName = "Brown Spots",
+                        symptoms = "Small, brown, oval spots on leaves.",
+                        diseaseCauses = "Fungal infection due to excessive moisture."
+                    ),
+                    diseaseRemedyList = listOf(
+                        DiseaseRemedy(
+                            title = "Use Fungicides",
+                            diseaseRemedyShortDesc = "Apply recommended fungicides.",
+                            diseaseRemedy = "Spray fungicide early when symptoms appear."
+                        ),
+                        DiseaseRemedy(
+                            title = "Crop Rotation",
+                            diseaseRemedyShortDesc = "Avoid planting rice continuously in the same field.",
+                            diseaseRemedy = "Use crop rotation to reduce fungal buildup."
+                        )
+                    )
+                )
+
+                else -> DiseaseInfo(
+                    key = "Unknown",
+                    plantName = "Unknown",
+                    botanicalName = "N/A",
+                    diseaseDesc = DiseaseDesc(
+                        diseaseName = "Unknown Disease",
+                        symptoms = "No known symptoms.",
+                        diseaseCauses = "Unknown cause."
+                    ),
+                    diseaseRemedyList = listOf(
+                        DiseaseRemedy(
+                            title = "Consult an Expert",
+                            diseaseRemedyShortDesc = "Seek help from an agronomist.",
+                            diseaseRemedy = "Take a sample to a local agricultural center for testing."
+                        )
+                    )
+                )
+            }
+        }
 
         val client = OkHttpClient()
         client.newCall(request).enqueue(object : Callback {
@@ -191,55 +228,23 @@ class OnlinePredictionActivity : AppCompatActivity() {
             }
 
             override fun onResponse(call: Call, response: Response) {
-                val responseBody = response.body?.string()
+                val responseText = response.body?.string() ?: "No response"
+                Log.d("API_RESPONSE", "Raw response: $responseText")
 
-                responseBody?.let {
-                    val gson = Gson()
-
+                runOnUiThread {
                     try {
-//                        val jsonObject = gson.fromJson(it, JsonObject::class.java)
-                        val jsonObject = JSONObject(responseBody)
-                        // 🔥 Log entire response
-                        Log.d("API_RAW_RESPONSE", it)
+                        val jsonObject = JSONObject(responseText)
+                        val prediction = jsonObject.optString("prediction", "Unknown")
+                        Log.d("PARSED_PREDICTION", "Prediction: $prediction")
 
-                        // 🔥 Check if "prediction" exists
-                        if (jsonObject.has("prediction")) {
-                            val predictionJson = jsonObject.getJSONObject("prediction")
-
-                            // 🔥 Log extracted "prediction" object
-                            Log.d("API_PREDICTION_JSON", predictionJson.toString())
-
-                            // ✅ Correctly parse DiseaseInfo
-                            val key = if (predictionJson.has("key")) predictionJson.getString("key") else "N/A"
-                            val plantName = if (predictionJson.has("plantName")) predictionJson.getString("plantName") else "N/A"
-                            val botanicalName = if (predictionJson.has("botanicalName")) predictionJson.getString("botanicalName") else "N/A"
-                            Log.d("API_FIELDS", "Key: $key, Plant: $plantName, Botanical: $botanicalName")
-
-                            // 🔥 Convert JSON to DiseaseInfo
-                            val diseaseInfo: DiseaseInfo? = gson.fromJson(predictionJson.toString(), DiseaseInfo::class.java)
-
-                            Log.d("API_PREDICTION_JSON", "$diseaseInfo")
-                            runOnUiThread {
-                                if (diseaseInfo != null) {
-                                    displayDiseaseDetails(diseaseInfo)
-                                }
-                            }
-                        } else {
-                            runOnUiThread {
-                                binding.predictionResult.text = "Error: 'prediction' key not found!"
-                            }
-                        }
-
+                        val diseaseInfo = getStaticDiseaseInfo(prediction)
+                        displayDiseaseDetails(diseaseInfo)
                     } catch (e: Exception) {
-                        runOnUiThread {
-                            binding.predictionResult.text = "JSON Parsing Error: ${e.message}"
-                        }
-                        Log.e("API_PARSE_ERROR", "JSON Parsing failed: ${e.message}")
+                        Log.e("PARSE_ERROR", "Error parsing JSON: ${e.message}")
+                        binding.predictionResult.text = "Error parsing response"
                     }
                 }
             }
-
-
 
         })
     }
@@ -249,6 +254,6 @@ class OnlinePredictionActivity : AppCompatActivity() {
     companion object {
         private const val CAMERA_REQUEST = 1001
         private const val GALLERY_REQUEST = 1002
-        private const val API_ENDPOINT = "https://navpan2-sarvaapiplantvillage.hf.space/predict"
+        private const val API_ENDPOINT = "https://navpan2-sarva-api.hf.space/predict"
     }
 }

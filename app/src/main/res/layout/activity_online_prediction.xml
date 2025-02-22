@@ -64,7 +64,7 @@
 
     <!-- API Response Text -->
     <TextView
-        android:id="@+id/api_response_text"
+        android:id="@+id/prediction_result"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/IDS_API_RESPONSE"

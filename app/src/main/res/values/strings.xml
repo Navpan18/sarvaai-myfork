@@ -23,4 +23,6 @@
     <string name="IDS_PREDICT">Predict</string>
     <string name="IDS_PREDICTION_RESULT">Prediction Result:</string>
     <string name="PLANTIMG">plant_image_description</string>
+    <string name="rice_online_prediction">Rice Online Prediction</string>
+    <string name="rice_offline_prediction">Rice Offline Prediction</string>
 </resources>

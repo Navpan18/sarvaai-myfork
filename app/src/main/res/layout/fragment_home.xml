@@ -43,7 +43,7 @@
                 app:layout_constraintTop_toTopOf="parent"
                 android:textColor="@color/white"
                 android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="8dp"
                 android:text="@string/HELLO_FARMER"
                 android:textSize="22sp"
                 android:id="@+id/farmer_name"
@@ -70,7 +70,6 @@
             android:id="@+id/weather_card"
             android:layout_marginStart="20dp"
             android:layout_marginEnd="20dp"
-            android:layout_marginTop="-50dp"
             app:cardBackgroundColor="@color/white"
             app:layout_constraintTop_toBottomOf="@id/header"
             android:layout_height="200dp">
@@ -89,7 +88,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/weather_card"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:textColor="@color/black"
             android:textSize="14sp"
             android:textStyle="bold"
@@ -100,19 +99,19 @@
 
 
         <androidx.recyclerview.widget.RecyclerView
-            android:layout_width="match_parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="20dp"
-            android:layout_marginEnd="20dp"
-            app:layout_constraintTop_toBottomOf="@id/commodity_and_food_header"
-            android:layout_marginTop="16dp"
-            android:orientation="horizontal"
-            tools:itemCount="10"
             android:id="@+id/commodity_and_food_list"
-            tools:listitem="@layout/commodity_or_food_item"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="20dp"
+            android:orientation="horizontal"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            android:layout_height="wrap_content"/>
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/commodity_and_food_header"
+            tools:itemCount="10"
+            tools:listitem="@layout/commodity_or_food_item" />
 
 
         <TextView
@@ -122,7 +121,7 @@
             app:layout_constraintTop_toBottomOf="@id/commodity_and_food_list"
             android:layout_marginStart="20dp"
             android:layout_marginEnd="20dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:textColor="@color/black"
             android:textSize="14sp"
             android:id="@+id/your_field_header"
@@ -134,7 +133,7 @@
             android:id="@+id/my_crop_button"
             android:layout_width="140dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:layout_marginEnd="10dp"
             android:minWidth="100dp"
             android:minHeight="140dp"
@@ -182,7 +181,7 @@
             android:minHeight="140dp"
             app:cardBackgroundColor="@color/white"
             android:layout_marginStart="10dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             app:layout_constraintBottom_toTopOf="@id/end_view"
             app:layout_constraintStart_toEndOf="@id/barrier"
             android:id="@+id/my_crop_doctor_button"
@@ -208,48 +207,145 @@
                 android:layout_height="wrap_content"/>
 
         </androidx.cardview.widget.CardView>
+        <!-- Online Prediction Button - Aligned Below My Crops -->
         <androidx.cardview.widget.CardView
-            android:layout_width="140dp"
-            android:minWidth="100dp"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="20dp"
-            app:layout_constraintEnd_toEndOf="@id/barrier"
             android:id="@+id/online_prediction_button"
-            android:layout_marginEnd="10dp"
-            app:layout_constraintBottom_toTopOf="@id/end_view"
-            app:cardBackgroundColor="@color/white"
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:minWidth="100dp"
             android:minHeight="140dp"
-            app:layout_constraintTop_toBottomOf="@id/my_crop_doctor_button"
-            android:layout_height="wrap_content">
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="20dp"
+            app:layout_constraintTop_toBottomOf="@id/my_crop_button"
+            app:layout_constraintStart_toStartOf="@id/my_crop_button"
+            app:layout_constraintEnd_toEndOf="@id/my_crop_button">
 
             <ImageView
                 android:layout_width="90dp"
-                android:layout_margin="10dp"
-                android:padding="8dp"
-                android:contentDescription="@string/IDS_ONLINE_PREDICTION"
-                android:src="@drawable/okk"
+                android:layout_height="90dp"
                 android:layout_gravity="center_horizontal"
-                android:layout_height="90dp"/>
+                android:layout_margin="10dp"
+                android:contentDescription="@string/IDS_ONLINE_PREDICTION"
+                android:padding="8dp"
+                android:src="@drawable/okk" />
 
             <TextView
                 android:layout_width="match_parent"
-                android:text="@string/IDS_ONLINE_PREDICTION"
-                android:gravity="center"
-                android:textColor="@color/black"
-                android:textSize="14sp"
+                android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
                 android:layout_marginBottom="10dp"
-                android:layout_height="wrap_content"/>
+                android:gravity="center"
+                android:text="@string/IDS_ONLINE_PREDICTION"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
         </androidx.cardview.widget.CardView>
-        <Button
-            android:id="@+id/offline_prediction_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/IDS_OFFLINE_PREDICTION"
-            app:layout_constraintTop_toBottomOf="@id/my_crop_doctor_button"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
 
+        <!-- Offline Prediction Button - Aligned Below My Crop Doctor -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/offline_prediction_button"
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:minWidth="100dp"
+            android:minHeight="140dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="20dp"
+            app:layout_constraintTop_toBottomOf="@id/my_crop_doctor_button"
+            app:layout_constraintStart_toStartOf="@id/my_crop_doctor_button"
+            app:layout_constraintEnd_toEndOf="@id/my_crop_doctor_button">
+
+            <ImageView
+                android:layout_width="90dp"
+                android:layout_height="90dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_margin="10dp"
+                android:contentDescription="@string/IDS_OFFLINE_PREDICTION"
+                android:padding="8dp"
+                android:src="@drawable/ic_offline_prediction" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginBottom="10dp"
+                android:gravity="center"
+                android:text="@string/IDS_OFFLINE_PREDICTION"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+        </androidx.cardview.widget.CardView>
+        <!-- Rice Online Prediction Card -->
+        <!-- Rice Online Prediction Card - Now Positioned Below Online Prediction -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/rice_online_prediction_card"
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:minWidth="100dp"
+            android:minHeight="100dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="20dp"
+            app:layout_constraintTop_toBottomOf="@id/online_prediction_button"
+            app:layout_constraintStart_toStartOf="@id/online_prediction_button"
+            app:layout_constraintEnd_toEndOf="@id/online_prediction_button"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="10dp"
+                android:src="@drawable/ic_online_prediction"
+                android:contentDescription="@string/IDS_ONLINE_PREDICTION" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginBottom="10dp"
+                android:gravity="center"
+                android:text="Rice Online Prediction"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+        </androidx.cardview.widget.CardView>
+
+
+        <!-- Rice Offline Prediction Card -->
+        <!-- Rice Offline Prediction Card - Now Positioned Below Offline Prediction -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/rice_offline_prediction_card"
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:minWidth="100dp"
+            android:minHeight="100dp"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="20dp"
+            app:layout_constraintTop_toBottomOf="@id/offline_prediction_button"
+            app:layout_constraintStart_toStartOf="@id/offline_prediction_button"
+            app:layout_constraintEnd_toEndOf="@id/offline_prediction_button"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="10dp"
+                android:src="@drawable/ic_offline_prediction"
+                android:contentDescription="@string/IDS_OFFLINE_PREDICTION" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginBottom="10dp"
+                android:gravity="center"
+                android:text="Rice Offline Prediction"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+        </androidx.cardview.widget.CardView>
         <View
             android:layout_width="match_parent"
             app:layout_constraintStart_toStartOf="parent"

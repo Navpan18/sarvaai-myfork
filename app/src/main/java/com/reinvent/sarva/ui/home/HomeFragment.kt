@@ -62,6 +62,16 @@ class HomeFragment : Fragment()
             val intent = Intent(requireContext(), OfflinePredictionActivity::class.java)
             startActivity(intent)
         }
+        binding.riceOnlinePredictionCard.setOnClickListener {
+            val intent = Intent(requireContext(), RiceOnlinePredictionActivity::class.java)
+            startActivity(intent)
+        }
+
+        binding.riceOfflinePredictionCard.setOnClickListener {
+            val intent = Intent(requireContext(), RiceOfflinePredictionActivity::class.java)
+            startActivity(intent)
+        }
+
 
         binding.onlinePredictionButton.setOnClickListener {
             val intent = Intent(requireContext(), OnlinePredictionActivity::class.java)

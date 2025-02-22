@@ -42,6 +42,13 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+        <activity android:name=".ui.home.RiceOnlinePredictionActivity"
+            android:exported="true"
+            android:theme="@style/Theme.CropCare"/>
+
+        <activity android:name=".ui.home.RiceOfflinePredictionActivity"
+            android:exported="true"
+            android:theme="@style/Theme.CropCare"/>
 
         <activity
             android:name=".ui.home.OfflinePredictionActivity"
