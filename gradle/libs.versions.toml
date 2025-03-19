@@ -1,5 +1,7 @@
 [versions]
 android-image-cropper = "4.4.0"
+firebaseAuth = "21.2.0" # Check for latest version
+
 agp = "8.8.0"
 cameraCore = "1.2.2"
 compiler = "4.11.0"
@@ -27,6 +29,8 @@ fragmentKtx = "1.5.6"
 gson = "2.8.8"
 
 [libraries]
+firebase-auth = { module = "com.google.firebase:firebase-auth", version.ref = "firebaseAuth" }
+
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 imagecropper = { group = "com.vanniktech", name = "android-image-cropper", version.ref = "android-image-cropper" }
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraCore" }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1054995505757",
+    "project_id": "sarva-ai",
+    "storage_bucket": "sarva-ai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1054995505757:android:12876dda4fcd94554ce3b4",
+        "android_client_info": {
+          "package_name": "com.reinvent.sarva"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxiNGVOGENpNdNxD3Ae0jJRVa9z_ITwfY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

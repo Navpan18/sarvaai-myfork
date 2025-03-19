@@ -9,7 +9,9 @@ plugins {
 android {
     namespace = "com.reinvent.sarva"
     compileSdk = 35
-
+    buildFeatures {
+        viewBinding = true
+    }
     defaultConfig {
         applicationId = "com.reinvent.sarva"
         minSdk = 28
@@ -46,6 +48,8 @@ android {
 }
 
 dependencies {
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
     implementation(libs.imagecropper)
     implementation(libs.gson)
     implementation(libs.okhttp)

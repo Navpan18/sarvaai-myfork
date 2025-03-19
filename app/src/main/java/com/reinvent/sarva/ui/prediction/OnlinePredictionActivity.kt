@@ -1,4 +1,4 @@
-package com.reinvent.sarva.ui.home
+package com.reinvent.sarva.ui.prediction
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -15,8 +15,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.gson.Gson
-import com.google.gson.JsonObject
-import com.reinvent.sarva.R
 import com.reinvent.sarva.databinding.ActivityOnlinePredictionBinding
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -54,7 +52,8 @@ class OnlinePredictionActivity : AppCompatActivity() {
     private lateinit var uploadButton: Button
     private lateinit var apiResponseText: TextView
     private var selectedImageUri: Uri? = null
-
+    private var selectedCrop = ""
+    private var API_ENDPOINT = ""
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityOnlinePredictionBinding.inflate(layoutInflater)
@@ -63,7 +62,9 @@ class OnlinePredictionActivity : AppCompatActivity() {
         imagePreview = binding.imagePreview
         uploadButton = binding.uploadButton
         apiResponseText = binding.predictionResult
-
+        selectedCrop = intent.getStringExtra("crop_name") ?: ""
+        Log.d("OnlinePredictionActivity", "Selected Crop: $selectedCrop")
+        API_ENDPOINT="https://navpan2-predictionmodel-15mar.hf.space/predict/$selectedCrop"
         binding.cameraButton.setOnClickListener { openCamera() }
         binding.galleryButton.setOnClickListener { openGallery() }
         binding.uploadButton.setOnClickListener { uploadImageToApi() }
@@ -149,24 +150,25 @@ class OnlinePredictionActivity : AppCompatActivity() {
 
 
 
-        fun displayDiseaseDetails(info: DiseaseInfo) {
+         fun displayDiseaseDetails(info: DiseaseInfo) {
             val result = """
         🌱 **Plant Name:** ${info.plantName}
-        🔬 **Botanical Name:** ${info.botanicalName}
+        🔬 **Botanical Name:** ${info.botanicalName.ifEmpty { "TBD" }}
         
         ⚠️ **Disease:** ${info.diseaseDesc.diseaseName}
-        🤒 **Symptoms:** ${info.diseaseDesc.symptoms}
-        🦠 **Causes:** ${info.diseaseDesc.diseaseCauses}
+        🤒 **Symptoms:** ${info.diseaseDesc.symptoms.ifEmpty { "TBD" }}
+        🦠 **Causes:** ${info.diseaseDesc.diseaseCauses.ifEmpty { "TBD" }}
         
         💊 **Remedies:**
         ${info.diseaseRemedyList.joinToString("\n\n") { remedy ->
-                "• **${remedy.title}**\n   - *${remedy.diseaseRemedyShortDesc}*\n   - ${remedy.diseaseRemedy}"
+                "• **${remedy.title}**\n   - *${remedy.diseaseRemedyShortDesc.ifEmpty { "TBD" }}*\n   - ${remedy.diseaseRemedy.ifEmpty { "TBD" }}"
             }}
     """.trimIndent()
 
             binding.predictionResult.text = result
-            binding.predictionResult.visibility = View.VISIBLE  // Make sure it is visible
+            binding.predictionResult.visibility = View.VISIBLE  // Make sure it's visible
         }
+
 
 
 
@@ -197,37 +199,32 @@ class OnlinePredictionActivity : AppCompatActivity() {
                     val gson = Gson()
 
                     try {
-//                        val jsonObject = gson.fromJson(it, JsonObject::class.java)
-                        val jsonObject = JSONObject(responseBody)
-                        // 🔥 Log entire response
-                        Log.d("API_RAW_RESPONSE", it)
+                        val jsonObject = JSONObject(responseBody) // ✅ Convert response to JSON
+                        Log.d("API_RAW_RESPONSE", it) // 🔥 Log entire response for debugging
 
-                        // 🔥 Check if "prediction" exists
-                        if (jsonObject.has("prediction")) {
-                            val predictionJson = jsonObject.getJSONObject("prediction")
-
-                            // 🔥 Log extracted "prediction" object
-                            Log.d("API_PREDICTION_JSON", predictionJson.toString())
-
-                            // ✅ Correctly parse DiseaseInfo
-                            val key = if (predictionJson.has("key")) predictionJson.getString("key") else "N/A"
-                            val plantName = if (predictionJson.has("plantName")) predictionJson.getString("plantName") else "N/A"
-                            val botanicalName = if (predictionJson.has("botanicalName")) predictionJson.getString("botanicalName") else "N/A"
-                            Log.d("API_FIELDS", "Key: $key, Plant: $plantName, Botanical: $botanicalName")
-
-                            // 🔥 Convert JSON to DiseaseInfo
-                            val diseaseInfo: DiseaseInfo? = gson.fromJson(predictionJson.toString(), DiseaseInfo::class.java)
-
-                            Log.d("API_PREDICTION_JSON", "$diseaseInfo")
-                            runOnUiThread {
-                                if (diseaseInfo != null) {
-                                    displayDiseaseDetails(diseaseInfo)
+                        val diseaseInfo = DiseaseInfo(
+                            key = jsonObject.optString("plantName", "N/A"), // Using plantName as key since 'key' is missing
+                            plantName = jsonObject.optString("plantName", "Unknown Plant"),
+                            botanicalName = jsonObject.optString("botanicalName", "TBD"),
+                            diseaseDesc = DiseaseDesc(
+                                diseaseName = jsonObject.getJSONObject("diseaseDesc").optString("diseaseName", "Unknown Disease"),
+                                symptoms = jsonObject.getJSONObject("diseaseDesc").optString("symptoms", "TBD"),
+                                diseaseCauses = jsonObject.getJSONObject("diseaseDesc").optString("diseaseCauses", "TBD")
+                            ),
+                            diseaseRemedyList = jsonObject.getJSONArray("diseaseRemedyList").let { remedyArray ->
+                                List(remedyArray.length()) { index ->
+                                    val remedyJson = remedyArray.getJSONObject(index)
+                                    DiseaseRemedy(
+                                        title = remedyJson.optString("title", "Unknown Remedy"),
+                                        diseaseRemedyShortDesc = remedyJson.optString("diseaseRemedyShortDesc", "TBD"),
+                                        diseaseRemedy = remedyJson.optString("diseaseRemedy", "TBD")
+                                    )
                                 }
                             }
-                        } else {
-                            runOnUiThread {
-                                binding.predictionResult.text = "Error: 'prediction' key not found!"
-                            }
+                        )
+
+                        runOnUiThread {
+                            displayDiseaseDetails(diseaseInfo)
                         }
 
                     } catch (e: Exception) {
@@ -241,6 +238,7 @@ class OnlinePredictionActivity : AppCompatActivity() {
 
 
 
+
         })
     }
 
@@ -248,7 +246,5 @@ class OnlinePredictionActivity : AppCompatActivity() {
 
     companion object {
         private const val CAMERA_REQUEST = 1001
-        private const val GALLERY_REQUEST = 1002
-        private const val API_ENDPOINT = "https://navpan2-sarvaapiplantvillage.hf.space/predict"
-    }
+        private const val GALLERY_REQUEST = 1002}
 }

@@ -1,13 +1,16 @@
 package com.reinvent.sarva
 
+import android.content.Intent
 import android.os.Bundle
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
+import com.google.firebase.auth.FirebaseAuth
 import com.reinvent.sarva.classifier.SarvaAIModel
 import com.reinvent.sarva.databinding.ActivityMainBinding
+import com.reinvent.sarva.ui.auth.LoginActivity
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -20,7 +23,12 @@ class HomeActivity : AppCompatActivity()
     override fun onCreate(savedInstanceState : Bundle?)
     {
         super.onCreate(savedInstanceState)
-
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish() // Close HomeActivity
+            return
+        }
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -36,9 +44,9 @@ class HomeActivity : AppCompatActivity()
         )
        // setupActionBarWithNavController(navController , appBarConfiguration)
         navView.setupWithNavController(navController)
-        aiModel.initModel(baseContext)
+//        aiModel.initModel(baseContext)
     }
 
-    @Inject
-    lateinit var aiModel : SarvaAIModel
+//    @Inject
+//    lateinit var aiModel : SarvaAIModel
 }

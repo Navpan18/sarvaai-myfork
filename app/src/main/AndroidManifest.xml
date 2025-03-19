@@ -30,7 +30,7 @@
             android:name=".ui.camera.CaptureImageActivity"
             android:label="Capture Plant Image"
             android:exported="false" />
-        <activity android:name=".ui.home.OnlinePredictionActivity"
+        <activity android:name=".ui.prediction.OnlinePredictionActivity"
             android:exported="true"
             android:theme="@style/Theme.CropCare" />
         <provider
@@ -51,13 +51,18 @@
             android:theme="@style/Theme.CropCare"/>
 
         <activity
-            android:name=".ui.home.OfflinePredictionActivity"
+            android:name=".ui.prediction.OfflinePredictionActivity"
             android:exported="true"
             android:theme="@style/Theme.CropCare" />
         <activity
             android:name="com.canhub.cropper.CropImageActivity"
             android:theme="@style/Base.Theme.AppCompat"
             />
+        <activity android:name=".ui.auth.LoginActivity"
+            android:theme="@style/Theme.MaterialComponents.Light.NoActionBar"/>
+        <activity android:name=".ui.crops.AllCropsActivity" />
+        <activity android:name=".ui.crops.MyCropsActivity" />
+        <activity android:name=".ui.cropdoctor.CropDoctorActivity" />
 
         <activity
             android:name=".HomeActivity"

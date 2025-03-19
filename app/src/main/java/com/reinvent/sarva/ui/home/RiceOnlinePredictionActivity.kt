@@ -13,8 +13,10 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.reinvent.sarva.R
 import com.reinvent.sarva.databinding.ActivityOnlinePredictionBinding
+import com.reinvent.sarva.ui.prediction.DiseaseDesc
+import com.reinvent.sarva.ui.prediction.DiseaseInfo
+import com.reinvent.sarva.ui.prediction.DiseaseRemedy
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody

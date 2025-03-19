@@ -11,84 +11,116 @@ import com.reinvent.sarva.SarvaLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import okio.FileNotFoundException
 import org.tensorflow.lite.Interpreter
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class SarvaAIModel @Inject constructor()
-{
-    fun initModel(context : Context)
-    {
+class SarvaAIModel @Inject constructor() {
+
+    private var _modelInterpreter = MutableLiveData<Interpreter>()
+    val modelInterpreter: LiveData<Interpreter> = _modelInterpreter
+
+    private var modelOutputSize: Int = DEFAULT_MODEL_OUTPUT_SIZE
+    private var selectedModelName: String = DEFAULT_MODEL_NAME
+
+    /**
+     * Initializes the model based on the selected crop.
+     */
+    private var cropnamer=""
+    fun initModel(context: Context, cropName: String) {
+        cropnamer=cropName
+        selectedModelName = "$cropName.tflite" // Set the model filename based on crop
+        modelOutputSize = getModelOutputSize(cropName) // Get model output size
+
         MainScope().launch(Dispatchers.IO) {
-            if(_modelInterpreter.value == null)
-            {
+            if (_modelInterpreter.value == null) {
                 initModelInternal(context)
             }
         }
     }
 
-    private fun initModelInternal(context : Context)
-    {
-        val conditions = CustomModelDownloadConditions.Builder()
-            .build()
+    /**
+     * Initializes the interpreter either from Firebase or from local assets.
+     */
+    private fun initModelInternal(context: Context) {
+        val conditions = CustomModelDownloadConditions.Builder().build()
         FirebaseModelDownloader.getInstance()
             .getModel(
-                MODEL_NAME,
+                selectedModelName,
                 DownloadType.LOCAL_MODEL_UPDATE_IN_BACKGROUND,
-                conditions)
+                conditions
+            )
             .addOnSuccessListener { model: CustomModel? ->
-                 if(model != null)
-                 {
-                     SarvaLogger.logWithTag( message = "Model Downloaded Successfully")
-                     val modelFile = model.file
-                     if (modelFile != null)
-                     {
-                         _modelInterpreter.postValue(Interpreter(modelFile))
-                     }
-                     else
-                     {
-                         initInterpreterWithLocalModel(context)
-                     }
-                 }
-                 else
-                 {
-                     initInterpreterWithLocalModel(context)
-                 }
-            }.addOnFailureListener { ex ->
-                SarvaLogger.logWithTag( message = "Failed to download the model: ${ex.message}")
+                if (model != null) {
+                    SarvaLogger.logWithTag(message = "Model Downloaded Successfully: $selectedModelName")
+                    val modelFile = model.file
+                    if (modelFile != null) {
+                        _modelInterpreter.postValue(Interpreter(modelFile))
+                    } else {
+                        initInterpreterWithLocalModel(context)
+                    }
+                } else {
+                    initInterpreterWithLocalModel(context)
+                }
+            }
+            .addOnFailureListener { ex ->
+                SarvaLogger.logWithTag(message = "Failed to download the model: ${ex.message}")
                 initInterpreterWithLocalModel(context)
             }
     }
 
-    private fun initInterpreterWithLocalModel(context : Context)
-    {
-        val localModelFile = loadLocalModel(context)
+    /**
+     * Initializes the interpreter using the locally stored model file.
+     */
+    private fun initInterpreterWithLocalModel(context: Context) {
+        val localModelFile = loadLocalModel(context, cropnamer )
         _modelInterpreter.postValue(Interpreter(localModelFile))
     }
 
-    private fun loadLocalModel(context: Context): File
-    {
-        val localFile = File(context.filesDir, LOCAL_MODEL_FILE_PATH)
-        localFile.parentFile?.mkdirs()
+    /**
+     * Loads the locally stored TensorFlow Lite model.
+     */
+    private fun loadLocalModel(context: Context, cropName: String): File {
+        val externalFilesDir = context.getExternalFilesDir("models") // ✅ Correct path
+        val localFile = File(externalFilesDir, "$cropName.tflite") // ✅ Load specific crop model
+
         if (!localFile.exists()) {
-            context.assets.open(LOCAL_MODEL_FILE_PATH).use { inputStream ->
-                localFile.outputStream().use { outputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            }
+            throw FileNotFoundException("Model file not found: ${localFile.absolutePath}")
         }
+
         return localFile
     }
 
-    private var _modelInterpreter = MutableLiveData<Interpreter>()
-    val modelInterpreter: LiveData<Interpreter> = _modelInterpreter
 
-    companion object
-    {
-        const val MODEL_NAME = "Sarva-Crop-Disease-Detector"
-        const val LOCAL_MODEL_FILE_PATH = "models/Sarva-Crop-Disease-Detector.tflite"
-        const val MODEL_OUTPUT_SIZE = 39
+    /**
+     * Returns the model output size based on the selected crop.
+     */
+    private fun getModelOutputSize(cropName: String): Int {
+        return when (cropName) {
+            "Rice" -> 2
+            "Tomato" -> 10
+            "Strawberry" -> 2
+            "Potato" -> 3
+            "Pepperbell" -> 2
+            "Peach" -> 2
+            "Grape" -> 4
+            "Apple" -> 4
+            "Cherry" -> 2
+            "Corn" -> 6
+            else -> DEFAULT_MODEL_OUTPUT_SIZE // Default size if model not found
+        }
     }
+
+    companion object {
+        private const val DEFAULT_MODEL_NAME = "Sarva-Crop-Disease-Detector.tflite"
+        private const val DEFAULT_MODEL_OUTPUT_SIZE = 39
+    }
+
+    /**
+     * Returns the current model output size.
+     */
+    fun getCurrentModelOutputSize(): Int = modelOutputSize
 }

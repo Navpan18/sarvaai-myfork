@@ -1,4 +1,8 @@
-package com.reinvent.sarva.ui.home
+package com.reinvent.sarva.ui.prediction
+import com.reinvent.sarva.classifier.SarvaAIModel
+import com.reinvent.sarva.classifier.DiseaseClassifier
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -11,14 +15,12 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import com.canhub.cropper.CropImage
 import com.canhub.cropper.CropImageView
 import com.canhub.cropper.CropImageContract
 import com.canhub.cropper.CropImageContractOptions
 import com.canhub.cropper.CropImageOptions
 import okhttp3.*
 import com.google.gson.Gson
-import com.reinvent.sarva.R
 import com.reinvent.sarva.databinding.ActivityOfflinePredictionBinding
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
@@ -28,15 +30,58 @@ import java.nio.channels.FileChannel
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-class OfflinePredictionActivity : AppCompatActivity() {
+import android.util.Log
 
+@AndroidEntryPoint
+class OfflinePredictionActivity : AppCompatActivity() {
     private lateinit var binding: ActivityOfflinePredictionBinding
     private lateinit var interpreter: Interpreter
+
+    @Inject
+    lateinit var sarvaAIModel: SarvaAIModel
+
+    @Inject
+    lateinit var diseaseClassifier: DiseaseClassifier
+
     private var selectedBitmap: Bitmap? = null
 
-    companion object {
-        private const val MODEL_PATH = "Sarva-Crop-Disease-Detector.tflite"
-    }
+//    companion object {
+//        private var MODEL_PATH = "Sarva-Crop-Disease-Detector.tflite"
+//    }
+private var MODEL_PATH = "Sarva-Crop-Disease-Detector.tflite" // Declare at class level
+private var selectedCrop = ""
+
+
+//    if (selectedCrop.isNotEmpty() && plantDiseaseDict.containsKey(selectedCrop)) {
+//        MODEL_PATH = "$selectedCrop.tflite" // ✅ Now it's mutable and recognized
+//    }
+
+//    if (selectedCrop.isNotEmpty() && plantDiseaseDict.containsKey(selectedCrop)) {
+//        MODEL_PATH = "$selectedCrop.tflite" // Change model file dynamically
+//    }
+
+    private val plantDiseaseDict = mapOf(
+        "Rice" to listOf("Blight", "Brown_Spots"),
+        "Tomato" to listOf(
+            "Tomato___Bacterial_spot", "Tomato___Early_blight", "Tomato___Late_blight",
+            "Tomato___Leaf_Mold", "Tomato___Septoria_leaf_spot",
+            "Tomato___Spider_mites Two-spotted_spider_mite",
+            "Tomato___Target_Spot", "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
+            "Tomato___Tomato_mosaic_virus", "Tomato___healthy"
+        ),
+        "Strawberry" to listOf("Strawberry___Leaf_scorch", "Strawberry___healthy"),
+        "Potato" to listOf("Potato___Early_blight", "Potato___Late_blight", "Potato___healthy"),
+        "Pepperbell" to listOf("Pepper,_bell___Bacterial_spot", "Pepper,_bell___healthy"),
+        "Peach" to listOf("Peach___Bacterial_spot", "Peach___healthy"),
+        "Grape" to listOf(
+            "Grape___Black_rot", "Grape___Esca_(Black_Measles)",
+            "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)", "Grape___healthy"
+        ),
+        "Apple" to listOf("Apple___Apple_scab", "Apple___Black_rot", "Apple___Cedar_apple_rust", "Apple___healthy"),
+        "Cherry" to listOf("Cherry___Powdery_mildew", "Cherry___healthy"),
+        "Corn" to listOf("Corn___Cercospora_leaf_spot Gray_leaf_spot", "Corn___Common_rust",
+            "Corn___Northern_Leaf_Blight", "Corn___healthy"),
+    )
 
     private val cropActivityResultLauncher = registerForActivityResult(CropImageContract()) { result ->
         if (result.isSuccessful) {
@@ -56,12 +101,31 @@ class OfflinePredictionActivity : AppCompatActivity() {
         binding = ActivityOfflinePredictionBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        interpreter = Interpreter(loadModelFile())
+        // ✅ Retrieve the selected crop
+        selectedCrop = intent.getStringExtra("selectedCrop") ?: ""
+
+        Log.d("OfflinePredictionActivity", "Selected Crop: $selectedCrop")
+
+        // ✅ Initialize Model (Dynamically Load Correct Model)
+        sarvaAIModel.initModel(applicationContext,selectedCrop)
+
+        // ✅ Use SarvaAIModel's interpreter once it's available
+        sarvaAIModel.modelInterpreter.observe(this) { loadedInterpreter ->
+            if (loadedInterpreter != null) {
+                interpreter = loadedInterpreter  // ✅ Properly assign interpreter
+                diseaseClassifier.initialize(interpreter, selectedCrop) // ✅ Initialize classifier
+                Log.d("OfflinePredictionActivity", "Model Loaded Successfully for $selectedCrop")
+            } else {
+                Log.e("OfflinePredictionActivity", "Failed to load model for $selectedCrop")
+                Toast.makeText(this, "Error: Model not available!", Toast.LENGTH_LONG).show()
+            }
+        }
 
         binding.cameraButton.setOnClickListener { openCamera() }
         binding.galleryButton.setOnClickListener { openGallery() }
         binding.predictButton.setOnClickListener { runPrediction() }
     }
+
 
     private fun openCamera() {
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
@@ -322,11 +386,18 @@ class OfflinePredictionActivity : AppCompatActivity() {
         val fileChannel = inputStream.channel
         val startOffset = fileDescriptor.startOffset
         val declaredLength = fileDescriptor.declaredLength
+
+        Log.d("OfflinePredictionActivity", "Loading Model: $MODEL_PATH")
         return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength)
     }
 
+
     @SuppressLint("SetTextI18n")
     private fun runPrediction() {
+        if (!::interpreter.isInitialized) { // ✅ Check if interpreter is initialized
+            Toast.makeText(this, "Model not loaded yet. Please wait!", Toast.LENGTH_SHORT).show()
+            return
+        }
         selectedBitmap?.let { bitmap ->
             val inputSize = 224
             val resizedBitmap = Bitmap.createScaledBitmap(bitmap, inputSize, inputSize, true)
@@ -342,61 +413,36 @@ class OfflinePredictionActivity : AppCompatActivity() {
                 }
             }
 
+            // Retrieve disease classes for selected crop from plantDiseaseDict
+            val diseaseClasses = plantDiseaseDict[selectedCrop] ?: emptyList()
+
+            // If only one class exists, log the prediction directly
+            if (diseaseClasses.size == 1) {
+                val singlePrediction = diseaseClasses[0]
+                Log.d("OfflinePredictionActivity", "Predicted Class (Single): $singlePrediction")
+                binding.predictionResult.text = "Prediction: $singlePrediction"
+                binding.predictionResult.visibility = TextView.VISIBLE
+                return
+            }
+
             // Model output
-            val output = Array(1) { FloatArray(39) }
+            val output = Array(1) { FloatArray(diseaseClasses.size) }
             interpreter.run(input, output)
 
-            // Finding the predicted class
-            val predictedClass = output[0].indices.maxByOrNull { output[0][it] } ?: -1
+            // Finding the predicted class index
+            val predictedIndex = output[0].indices.maxByOrNull { output[0][it] } ?: -1
 
-            // Mapping predicted class to class name
-            val classLabels = mapOf(
-                0 to "Apple___Apple_scab",
-                1 to "Apple___Black_rot",
-                2 to "Apple___Cedar_apple_rust",
-                3 to "Apple___healthy",
-                4 to "Background_without_leaves",
-                5 to "Blueberry___healthy",
-                6 to "Cherry_Powdery___mildew",
-                7 to "Cherry___healthy",
-                8 to "Corn___Cercospora_leaf_spot_Gray_leaf_spot",
-                9 to "Corn___Common_rust",
-                10 to "Corn___Northern_Leaf_Blight",
-                11 to "Corn___healthy",
-                12 to "Grape___Black_rot",
-                13 to "Grape___Esca(Black_Measles)",
-                14 to "Grape___Leaf_blight(Isariopsis_Leaf_Spot)",
-                15 to "Grape___healthy",
-                16 to "Orange___Haunglongbing(Citrus_greening)",
-                17 to "Peach___Bacterial_spot",
-                18 to "Peach___healthy",
-                19 to "Pepper,bell___Bacterial_spot",
-                20 to "Pepper,___bell_healthy",
-                21 to "Potato___Early_blight",
-                22 to "Potato___Late_blight",
-                23 to "Potato___healthy",
-                24 to "Raspberry___healthy",
-                25 to "Soybean___healthy",
-                26 to "Squash___Powdery_mildew",
-                27 to "Strawberry___Leaf_scorch",
-                28 to "Strawberry___healthy",
-                29 to "Tomato___Bacterial_spot",
-                30 to "Tomato___Early_blight",
-                31 to "Tomato___Late_blight",
-                32 to "Tomato___Leaf_Mold",
-                33 to "Tomato___Septoria_leaf_spot",
-                34 to "Tomato___Spider_mites_Two-spotted_spider_mite",
-                35 to "Tomato___Target_Spot",
-                36 to "Tomato___Tomato_Yellow_Leaf_Curl_Virus",
-                37 to "Tomato___Tomato_mosaic_virus",
-                38 to "Tomato___healthy"
-            )
+            // Map prediction to the corresponding disease class
+            val predictedClass = if (predictedIndex in diseaseClasses.indices) {
+                diseaseClasses[predictedIndex]
+            } else {
+                "Unknown Class"
+            }
 
-            // Getting the class name from the dictionary
-            val className = classLabels[predictedClass] ?: "Unknown Class"
+            Log.d("OfflinePredictionActivity", "Predicted Class: $predictedClass")
 
-            if (className != "Background_without_leaves") {
-                fetchDiseaseDetails(className)
+            if (predictedClass != "Background_without_leaves") {
+                fetchDiseaseDetails(predictedClass)
             } else {
                 binding.predictionResult.text = "This image does not contain any plant disease."
                 binding.predictionResult.visibility = TextView.VISIBLE
@@ -405,5 +451,6 @@ class OfflinePredictionActivity : AppCompatActivity() {
             Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show()
         }
     }
+
 
 }

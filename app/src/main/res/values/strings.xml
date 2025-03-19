@@ -1,4 +1,10 @@
 <resources>
+    <string name="login">Login</string>
+    <string name="signup">Sign Up</string>
+    <string name="email_hint">Enter Email</string>
+    <string name="password_hint">Enter Password</string>
+    <string name="welcome_message">Welcome to Sarva Krishi</string>
+    <string name="logout">Logout</string>
     <string name="app_name">Sarva Krishi</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
@@ -25,4 +31,9 @@
     <string name="PLANTIMG">plant_image_description</string>
     <string name="rice_online_prediction">Rice Online Prediction</string>
     <string name="rice_offline_prediction">Rice Offline Prediction</string>
+    <string name="password">Password</string>
+    <string name="email">Email</string>
+    <string name="hello_farmer">Hello, Farmer</string>
+    <string name="allcrops">allcrops</string>
+    <string name="IDS_ALL_CROPS">All crops</string>
 </resources>
